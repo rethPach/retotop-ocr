@@ -1,17 +1,18 @@
 import cv2
 import numpy as np
 from google.cloud import vision
-from google import genai
 from pydantic import ValidationError
 from config.config import Config
 from models.cedula_model import CedulaVenezolana
 
 class CedulaOcrService:
+    def __init__(self, vision_client, genai_client):
+        self.vision_client = vision_client
+        self.genai_client = genai_client
     
-    @staticmethod
-    def process_id_card(image_bytes: bytes) -> dict:
-        optimized_bytes = CedulaOcrService._optimize_image(image_bytes)
-        text_result = CedulaOcrService._extract_text(optimized_bytes)
+    def process_id_card(self, image_bytes: bytes) -> dict:
+        optimized_bytes = self._optimize_image(image_bytes)
+        text_result = self._extract_text(optimized_bytes)
         
         # Validación de cantidad mínima de caracteres
         if len(text_result) < Config.MIN_OCR_CHARS:
@@ -22,11 +23,10 @@ class CedulaOcrService:
         if not any(palabra in texto_upper for palabra in ["REPUBLICA", "BOLIVARIANA", "CEDULA", "IDENTIDAD", "VENEZUELA"]):
             raise ValueError("INVALID_DOCUMENT_TYPE")
 
-        structured_data = CedulaOcrService._extract_structured_data(text_result)
+        structured_data = self._extract_structured_data(text_result)
         return structured_data.model_dump()
 
-    @staticmethod
-    def _optimize_image(image_bytes: bytes) -> bytes:
+    def _optimize_image(self, image_bytes: bytes) -> bytes:
         nparr = np.frombuffer(image_bytes, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
@@ -54,12 +54,10 @@ class CedulaOcrService:
             
         return encoded_image.tobytes()
 
-    @staticmethod
-    def _extract_text(processed_image_bytes: bytes) -> str:
+    def _extract_text(self, processed_image_bytes: bytes) -> str:
         try:
-            client = vision.ImageAnnotatorClient()
             image = vision.Image(content=processed_image_bytes)
-            response = client.document_text_detection(image=image)
+            response = self.vision_client.document_text_detection(image=image)
             
             if response.error.message:
                 raise RuntimeError("EXTERNAL_SERVICE_ERROR")
@@ -69,10 +67,8 @@ class CedulaOcrService:
         except Exception:
             raise RuntimeError("EXTERNAL_SERVICE_ERROR")
 
-    @staticmethod
-    def _extract_structured_data(ocr_text: str) -> CedulaVenezolana:
+    def _extract_structured_data(self, ocr_text: str) -> CedulaVenezolana:
         try:
-            client = genai.Client()
             prompt = f"""
             Eres un experto extrayendo datos de cédulas de identidad venezolanas.
             Tu tarea es extraer los siguientes datos y devolverlos estructurados:
@@ -84,7 +80,7 @@ class CedulaOcrService:
             Texto OCR:
             {ocr_text}
             """
-            response = client.models.generate_content(
+            response = self.genai_client.models.generate_content(
                 model='gemini-3.5-flash',
                 contents=prompt,
                 config={
