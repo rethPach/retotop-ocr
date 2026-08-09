@@ -18,10 +18,17 @@ GEMINI_API_KEY="TU_CLAVE_API_DE_GEMINI"
 GOOGLE_APPLICATION_CREDENTIALS="ruta/al/archivo/credenciales-gcp.json"
 ```
 
-## Ejecución
+## Ejecución (Servidor Web)
 
-Coloca una imagen de prueba llamada `cedula_test.jpg` en este directorio, asegúrate de tener tu entorno virtual activo y ejecuta el script:
+Asegúrate de tener tu entorno virtual activo y ejecuta el archivo principal para levantar la API en el puerto `5000`:
 
 ```bash
-python main.py
+python app.py
+```
+
+### Probar el Endpoint
+El servidor esperará peticiones `POST` en `/api/extract-id`. Puedes probarlo enviando una imagen con `curl`:
+
+```bash
+curl -X POST http://localhost:5000/api/extract-id -F "image=@tu_foto_de_cedula.jpeg"
 ```
