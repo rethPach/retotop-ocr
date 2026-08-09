@@ -20,11 +20,14 @@ GOOGLE_APPLICATION_CREDENTIALS="ruta/al/archivo/credenciales-gcp.json"
 
 ## Ejecución de la API
 
-La aplicación ha sido refactorizada usando una arquitectura Modelo-Servicio-Controlador. Para encender el servidor Flask:
+La aplicación ha sido refactorizada usando una arquitectura Modelo-Servicio-Controlador. Para encender el servidor Flask, primero debes activar tu entorno virtual y luego ejecutar el script:
 
-1. Asegúrate de tener tu entorno virtual activo.
+1. Activa el entorno virtual en tu terminal:
+```powershell
+.\venv\Scripts\activate
+```
+
 2. Ejecuta el archivo principal:
-
 ```bash
 python app.py
 ```
@@ -39,22 +42,11 @@ La API expone una única ruta para procesar las imágenes:
 
 **Endpoint:** `POST /api/extract-id`
 
-### Opción 1: Usando cURL (Terminal)
+### Usando cURL (Terminal)
 
 ```bash
 curl -X POST http://localhost:5000/api/extract-id -F "image=@ruta/a/tu_foto_de_cedula.jpeg"
 ```
-
-### Opción 2: Usando Postman
-
-1. Crea una nueva petición (Request).
-2. Selecciona el método **POST**.
-3. Ingresa la URL: `http://localhost:5000/api/extract-id` (¡Asegúrate de usar `http` y no `https`!).
-4. Ve a la pestaña **Body**.
-5. Selecciona la opción **form-data**.
-6. En la columna *Key*, escribe `image` y cambia el tipo (a la derecha) de *Text* a **File**.
-7. En la columna *Value*, selecciona la foto de la cédula que deseas procesar.
-8. Haz clic en **Send**.
 
 ### Respuestas
 *   **Éxito (HTTP 200)**: Devolverá un JSON con `cedula`, `nombres`, `apellidos` y `fecha_nacimiento`.
