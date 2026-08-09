@@ -149,6 +149,12 @@ if __name__ == "__main__":
             if len(text_result) < MIN_OCR_CHARS:
                 raise ValueError(f"Texto insuficiente ({len(text_result)} caracteres < {MIN_OCR_CHARS}). El OCR falló por mala iluminación o encuadre. Se cancela llamada al LLM.")
             
+            # Filtro 3: Validación de Documento (Palabras Clave)
+            # Asegura que no nos envíen la foto de un periódico o una mascota
+            texto_upper = text_result.upper()
+            if not any(palabra in texto_upper for palabra in ["REPUBLICA", "BOLIVARIANA", "CEDULA", "IDENTIDAD", "VENEZUELA"]):
+                raise ValueError("El texto extraído no contiene palabras clave de una cédula venezolana. Documento rechazado.")
+
             print("3. Estructurando datos con Gemini 3.5 Flash...")
             structured_data = extract_structured_data_with_gemini(text_result)
             
