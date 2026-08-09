@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.json
+# Ignorar imagenes de prueba
+*.jpg
+*.jpeg
+*.png
