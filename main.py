@@ -11,6 +11,13 @@ from typing import Optional
 load_dotenv()
 
 # ==========================================
+# CONFIGURACIÓN DE UMBRALES (THRESHOLDS)
+# ==========================================
+MIN_LAPLACIAN_SCORE = 70.0  # Varianza mínima para considerar la imagen enfocada
+MIN_OCR_CHARS = 150         # Caracteres mínimos extraídos para proceder al LLM
+
+
+# ==========================================
 # 1. ESQUEMA PYDANTIC
 # ==========================================
 class CedulaVenezolana(BaseModel):
@@ -41,6 +48,13 @@ def optimize_id_card(image_bytes: bytes) -> bytes:
 
     # Escala de grises
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Filtro 1: Detector de Desenfoque (Blur Detection)
+    # Calculamos la varianza del Laplaciano. Si es muy baja, no hay bordes definidos.
+    laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+    print(f"   [Blur Score (Laplacian Variance): {laplacian_var:.2f}]")
+    if laplacian_var < MIN_LAPLACIAN_SCORE:
+        raise ValueError(f"Imagen demasiado borrosa (Score: {laplacian_var:.2f} < {MIN_LAPLACIAN_SCORE}). Por favor, tome una foto más nítida.")
 
     # Mejorar contraste local con CLAHE (Ecualización de histograma)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -131,7 +145,11 @@ if __name__ == "__main__":
             text_result = extract_text_with_google_vision(optimized_bytes)
             print(f"   [Texto extraído: {len(text_result)} caracteres]")
             
-            print("3. Estructurando datos con Gemini 2.5 Flash...")
+            # Filtro 2: Umbral de Longitud
+            if len(text_result) < MIN_OCR_CHARS:
+                raise ValueError(f"Texto insuficiente ({len(text_result)} caracteres < {MIN_OCR_CHARS}). El OCR falló por mala iluminación o encuadre. Se cancela llamada al LLM.")
+            
+            print("3. Estructurando datos con Gemini 3.5 Flash...")
             structured_data = extract_structured_data_with_gemini(text_result)
             
             print("\n--- RESULTADO FINAL (VALIDADO) ---")
